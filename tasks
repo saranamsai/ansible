@@ -1,0 +1,181 @@
+vi.webgoat.deploy.yml
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webgoat-deployment
+  labels:
+    app: webgoat
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: webgoat
+    spec:
+      containers:
+      - name: webgoat
+        image: webgoat/webgoat-7.1
+        env:
+        - name: WEBWOLF_HOST
+          value: "webwolf"
+        - name: WEBWOLF_PORT
+          value: "9090"
+        - name: spring.datasource.url
+          value: "jdbc:postgresql://webgoat_db:5432/webgoat?user=webgoat&password=webgoat"
+        - name: spring.datasource.username
+          value: "webgoat"
+        - name: spring.datasource.password
+          value: "webgoat"
+        - name: spring.datasource.driver-class-name
+          value: "org.postgresql.Driver"
+        - name: spring.jpa.properties.hibernate.dialect
+          value: "org.hibernate.dialect.PostgreSQL94Dialect"
+        - name: webgoat.server.directory
+          value: "/home/webgoat/.webgoat/"
+        - name : webgoat.user.directory
+          value: "/home/webgoat/.webgoat/"
+        ports:
+        - containerPort: 8080
+
+
+vi.webgoat.service.yml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: webgoat
+  name: webgoat
+spec:
+  ports:
+    - name: webgoat-port
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: webgoat
+  type: LoadBalancer
+
+
+
+
+vi.webwolf.deploy.yml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webwolf-deployment
+  labels:
+    app: webwolf
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: webwolf
+    spec:
+      containers:
+      - name: webwolf
+        image: webgoat/webwolf
+        env:
+        - name: spring.datasource.url
+          value: "jdbc:postgresql://webgoat_db:5432/webgoat?user=webgoat&password=webgoat"
+        - name: spring.datasource.username
+          value: "webgoat"
+        - name: spring.datasource.password
+          value: "webgoat"
+        - name: spring.datasource.driver-class-name
+          value: "org.postgresql.Driver"
+        - name: spring.jpa.properties.hibernate.dialect
+          value: "org.hibernate.dialect.PostgreSQL94Dialect"
+        ports:
+        - containerPort: 9090
+
+
+
+vi.webwolf.service.yml
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: webwolf
+  name: webwolf
+spec:
+  ports:
+    - name: webwolf-port
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: webwolf
+  type: LoadBalancer
+
+
+
+
+vi.postgress.deploy.yml
+
+
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        service: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:9.4
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: webgoat
+            - name: POSTGRES_USER
+              value: webgoat
+            - name: POSTGRES_PASSWORD
+              value: webgoat
+          volumeMounts:
+            - mountPath: "/var/lib/postgresql/data"
+              name: "webgoat-pgdata"
+      volumes:
+        - hostPath:
+            path: "/home/docker/pgdata"
+          name: webgoat-pgdata
+
+
+
+vi.postgres.service.yml
+
+
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: postgres-service
+ labels:
+   service: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgres-port
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    service: postgres
+
+
+
+
+
