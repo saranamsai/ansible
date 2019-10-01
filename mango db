@@ -1,0 +1,57 @@
+# mango db installation
+#Step 1 - Importing the Public Key
+#GPG keys of the software distributor are required by the Ubuntu package manager apt (Advanced Package Tool) to ensure package consistency and authenticity. Run this command to import MongoDB keys to your server.
+
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+
+#Step 2 - Create source list file MongoDB
+#Create a MongoDB list file in /etc/apt/sources.list.d/ with this command:
+
+echo "deb http://repo.mongodb.org/apt/ubuntu "$(lsb_release -sc)"/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.2.list
+
+#Step 3 - Update the repository
+#update the repository with the apt command:
+
+sudo apt-get update
+
+#Step 4 - Install MongoDB
+#Now you can install MongoDB by typing this command:
+
+sudo apt-get install -y mongodb-org
+
+#to start restart staus check
+systemctl start mongod
+systemctl enable mongod
+
+#Step 1 - Open mongo shell
+#Before you set up a username and password for MongoDB, you need to open the MongoDB shell on your server. You can login by typing:
+
+mongo
+#If you get error Failed global initialization: BadValue Invalid or no user locale set. Please ensure LANG and/or LC_* environment variables are set correctly, try the command:
+
+export LC_ALL=C
+mongo
+#Step 2 - Switch to the database admin
+#Once you`re in the MongoDB shell, switch to the database named admin:
+
+use admin
+#Step 3 - Create the root user
+#Create the root user with this command :
+
+db.createUser({user:"admin", pwd:"admin123", roles:[{role:"root", db:"admin"}]})
+
+
+version: "2"
+services:
+  web:
+    build: .
+    volumes:
+      - ./:/app
+    ports:
+      - "8080:8080"
+    links:
+      - mongo
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
